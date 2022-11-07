@@ -1,4 +1,5 @@
 import numpy as np
+import random
 from typing import List, Tuple
 
 def run_matching(scores: List[List], gender_id: List, gender_pref: List) -> List[Tuple]:
@@ -21,7 +22,75 @@ def run_matching(scores: List[List], gender_id: List, gender_pref: List) -> List
             - What data structure can you use to take advantage of this fact when forming your matches?
         - This is by no means an exhaustive list, feel free to reach out to us for more help!
     """
-    matches = [()]
+    preferences = []
+    for i in range(len(scores)):
+        for j in range(len(scores[i])):
+            if i == j:
+                scores[i][j] = (j, -10)
+            elif (gender_id[i] == "Nonbinary" and gender_id[j] != "Nonbinary") or (gender_id[i] == "Nonbinary" and gender_id == "Nonbinary"):
+                scores[i][j] = (j, 0)
+            elif (gender_pref[i] == "Bisexual" and gender_pref[j] == gender_id[i]) or (gender_pref[j] == "Bisexual" and gender_pref[i] == gender_id[j]):
+                scores[i][j] = (j, scores[i][j])
+            elif gender_pref[i] != gender_id[j] or gender_pref[j] != gender_id[i]:
+                scores[i][j] = (j, 0)
+            else:
+                scores[i][j] = (j, scores[i][j])
+        valids = sorted(scores[i], key = lambda x: x[1], reverse = True)
+        valids = [v[0] for v in valids]
+        preferences.append(valids)
+
+    proposers = []
+    receivers = []
+    while len(proposers) < len(gender_id) // 2:
+        rint = random.randint(0, len(gender_id) - 1)
+        if rint not in proposers:
+            proposers.append(rint)
+    print(proposers)
+
+    for i in range(len(gender_id)):
+        if i not in proposers:
+            receivers.append(i)
+
+    print(receivers)
+
+    divpreferences = []
+    for i in range(len(preferences)):
+        divpreferences.append([])
+
+    for i in range(len(preferences)):
+        for j in range(len(preferences[i])):
+            if i in proposers and preferences[i][j] in receivers:
+                divpreferences[i].append(preferences[i][j])
+            elif i in receivers and preferences[i][j] in proposers:
+                divpreferences[i].append(preferences[i][j])
+    print(divpreferences)
+    proposed = divpreferences
+
+    matches = [None] * len(scores)
+    while len(proposers) > 0:
+        m = proposers.pop(0)
+        if proposed[m] != []:
+            i = 0
+            w = proposed[m].pop(0)
+            mp = matches[w]
+            if mp == None:
+                matches[w] = m 
+                matches[m] = w 
+            elif divpreferences[w].index(m) < divpreferences[w].index(mp):
+                matches[w] = m 
+                matches[m] = w
+                matches[mp] = None
+                proposers.append(mp) 
+            else:
+                proposers.append(m)
+
+    matchlist = []
+    for i in range(len(scores)):
+        if matches[i] != None:
+            matchlist.append((i, matches[i]))
+            matches[matches[i]] = None
+    for m in matchlist:
+        print(m)
     return matches
 
 if __name__ == "__main__":
